@@ -29,7 +29,7 @@ data class Karte(val farbe: Farbe, val wert: Wert, val trumpf: Boolean, val trum
                     zweiteStichtErste && herzZehn(farbe, wert))
 
     fun bedient(karte: Karte): Boolean {
-        return if (karte.trumpf) trumpf else farbe == karte.farbe
+        return if (karte.trumpf) trumpf else !trumpf && farbe == karte.farbe
     }
 
     override fun toString(): String {
