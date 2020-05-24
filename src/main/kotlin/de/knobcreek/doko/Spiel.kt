@@ -3,13 +3,19 @@ package de.knobcreek.doko
 import java.util.Random
 import java.util.UUID
 
-enum class Ansage(val erlaubtBis : Int, val grenze: Int, val punkte: Int = 1) {
-    RE(1, 120, 2),
-    KONTRA(1, 120, 2),
+enum class Ansage(val erlaubtBis: Int,
+                  val erlaubtFür: Array<Partei>,
+                  val grenze: Int,
+                  val punkte: Int) {
+    RE(1, arrayOf(Partei.RE), 120, 2),
+    KONTRA(1, arrayOf(Partei.KONTRA), 120, 2),
     KEINE9(2, 150),
     KEINE6(3, 180),
     KEINE3(4, 210),
-    SCHWARZ(5, 240)
+    SCHWARZ(5, 239); // Re muß die Zahl überschreiten
+
+    constructor(erlaubtBis: Int, grenze: Int) :
+            this(erlaubtBis, Partei.values(), grenze, 1)
 }
 
 class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean) {
@@ -66,7 +72,7 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean) {
     }
 
     fun partei(karten: List<Karte>) =
-            SpielStatus(if (karten.contains(reDame)) Partei.RE else Partei.KONTRA)
+            SpielStatus(if (reDame in karten) Partei.RE else Partei.KONTRA)
 
     fun partei(sp: Spieler, soloSpieler: Spieler) =
             SpielStatus(if (sp == soloSpieler) Partei.RE else Partei.KONTRA)
@@ -104,10 +110,51 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean) {
 
     fun ansagen(ansage: Ansage, spieler: Spieler) {
         val status = spielStatusJeSpieler[spieler]
-        if (status == null || status.gespielteKarten > ansage.erlaubtBis)
+        if (status == null || status.partei !in ansage.erlaubtFür)
+            throw NichtErlaubtException("$ansage nicht erlaubt")
+        if (status.gespielteKarten > ansage.erlaubtBis)
             throw NichtErlaubtException("$ansage nur erlaubt bis zur ${ansage.erlaubtBis}. Karte")
         status.ansagen.add(ansage)
     }
+
+    fun ergebnis() : Ergebnis {
+        val ansagePunkte = ansagePunkte() // TODO Sonderpunkte
+
+        Partei.values().forEach { partei ->
+            val mitglieder = mitglieder(partei)
+            val spielPunkte = spielPunkte(mitglieder)
+            val grenze = mitglieder
+                    .flatMap { spieler -> spielStatusJeSpieler[spieler]?.ansagen ?: emptyList<Ansage>() }
+                    .map { ansage -> ansage.grenze }
+                    .max() ?: 120
+            if (partei.gewonnen(spielPunkte, grenze)) {
+                val punkte = partei.regulärePunkte(spielPunkte) + ansagePunkte
+                return Ergebnis(partei, mitglieder, punkte)
+            }
+        }
+        // In der seltenen Situation, daß keine Partei ihre Ansagen erreicht,
+        // gibt es 0 Punkte für niemanden. ;-)
+        return Ergebnis(Partei.KONTRA, emptyList(), 0)
+    }
+
+    fun ansagePunkte() =
+            spielStatusJeSpieler.values
+                    .flatMap { status -> status.ansagen }
+                    .map { ansage -> ansage.punkte }
+                    .sum()
+
+    fun mitglieder(partei: Partei) =
+            spielStatusJeSpieler.entries
+                    .filter { entry -> entry.value.partei == partei }
+                    .map { entry -> entry.key }
+
+    fun spielPunkte(mitglieder: List<Spieler>) =
+            stiche
+                    .filter { stich -> stich.hatGewonnen() in mitglieder }
+                    .map { stich -> stich.punkte() }
+                    .sum()
 }
 
 class NichtErlaubtException(val grund: String) : Throwable(grund)
+
+data class Ergebnis(val gewonnen: Partei, val spieler: List<Spieler>, val punkte: Int)

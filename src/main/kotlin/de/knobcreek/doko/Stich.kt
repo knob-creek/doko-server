@@ -14,7 +14,7 @@ class Stich(val nummer: Int,
             spieler.nummer == (letzterSpieler.nummer + 1) % 4
 
     fun darfSpielen(karte: Karte, hatKarten: List<Karte>) =
-            hatKarten.contains(karte) &&
+            karte in hatKarten &&
             !hatKarten.any { kt -> kt.bedient(aufgespielt) } || karte.bedient(aufgespielt)
 
     fun gespielt() =
