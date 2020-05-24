@@ -1,30 +1,36 @@
 package de.knobcreek.doko
 
-import org.junit.jupiter.api.Test
-
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 
 internal class SpielTest {
     val spieler = (0..3)
             .map { n -> Spieler(n) }
 
-    @Test
-    fun geben() {
-        val spiel = Spiel(spieler)
-        assertEquals(20, spiel.alleKarten.size)
+    enum class NeunenParameter(val mitNeuen: Boolean, val anzahl: Int) {
+        MIT_NEUNEN(true, 12),
+        OHNE_NEUNEN(false, 10)
+    }
+
+    @ParameterizedTest
+    @EnumSource(NeunenParameter::class)
+    fun geben(parameter: NeunenParameter) {
+        val spiel = Spiel(spieler, parameter.mitNeuen)
+        assertEquals(parameter.anzahl * 2, spiel.alleKarten.size)
         assertEquals(4, spiel.kartenJeSpieler.size)
         assertAll(
                 spiel.kartenJeSpieler.values
-                        .map { karten -> Executable { assertEquals(10, karten.size) } }
+                        .map { karten -> Executable { assertEquals(parameter.anzahl, karten.size) } }
         )
     }
 
     @Test
     fun keinVorbehalt() {
-        val spiel = Spiel(spieler)
+        val spiel = Spiel(spieler, false)
         assertAll(
                 spieler.subList(0, 3)
                         .map { sp -> Executable { assertNull(spiel.vorbehalt(Spielregel.REGULÄR, sp)) }}
@@ -35,7 +41,7 @@ internal class SpielTest {
         assertNull(spiel.soloSpieler)
     }
 
-    enum class Parameter(val spielregel: Spielregel, val trumpf: (Karte) -> Boolean) {
+    enum class SpielregelParameter(val spielregel: Spielregel, val trumpf: (Karte) -> Boolean) {
         KARO(Spielregel.KARO, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.KARO || karte == herzZehn }),
         HERZ(Spielregel.HERZ, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.HERZ }),
         PIK(Spielregel.PIK, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.PIK || karte == herzZehn }),
@@ -45,9 +51,9 @@ internal class SpielTest {
     }
 
     @ParameterizedTest
-    @EnumSource(Parameter::class)
-    fun kartenNeuBewerten(parameter: Parameter) {
-        val spiel = Spiel(spieler)
+    @EnumSource(SpielregelParameter::class)
+    fun kartenNeuBewerten(parameter: SpielregelParameter) {
+        val spiel = Spiel(spieler, true)
         spiel.kartenNeuBewerten(parameter.spielregel)
 
         assertAll(
@@ -57,27 +63,31 @@ internal class SpielTest {
         )
     }
 
-    @Test
-    fun fleischlos() {
-        val spiel = Spiel(spieler)
-        spieler.subList(0, 3)
-                .forEach { sp -> spiel.vorbehalt(Spielregel.REGULÄR, sp) }
-        val regeln = spiel.vorbehalt(Spielregel.FLEISCHLOS, spieler[3])
-        assertNotNull(regeln)
-        assertSame(spieler[3], regeln?.first)
-        assertSame(Spielregel.FLEISCHLOS, regeln?.second)
-        assertSame(spieler[3], spiel.soloSpieler)
-
-        assertAll(
-                spiel.kartenJeSpieler.values
-                        .flatten()
-                        .map { karte -> Executable { assertFalse(karte.trumpf) } }
-        )
+    @ParameterizedTest
+    @ValueSource(ints = [ 0, 1, 2, 3 ])
+    fun fleischlos(fleischlosSpieler: Int) {
+        val spiel = Spiel(spieler, false)
+        spieler.forEach { sp ->
+            val spielregel = if (sp.nummer == fleischlosSpieler)
+                Spielregel.FLEISCHLOS
+            else
+                Spielregel.REGULÄR
+            spiel.vorbehalt(spielregel, sp)
+        }
+        with (spiel) {
+            assertSame(Spielregel.FLEISCHLOS, spielregel)
+            assertSame(spieler[fleischlosSpieler], soloSpieler)
+            assertAll(
+                    kartenJeSpieler.values
+                            .flatten()
+                            .map { karte -> Executable { assertFalse(karte.trumpf) } }
+            )
+        }
     }
 
     @Test
     fun damenSolo() {
-        val spiel = Spiel(spieler)
+        val spiel = Spiel(spieler, false)
         spiel.vorbehalt(Spielregel.REGULÄR, spieler[0])
         spiel.vorbehalt(Spielregel.BUBEN, spieler[1])
         spiel.vorbehalt(Spielregel.DAMEN, spieler[2])
@@ -97,7 +107,7 @@ internal class SpielTest {
 
     @Test
     fun stichSpielen() {
-        val spiel = Spiel(spieler)
+        val spiel = Spiel(spieler, false)
 
         val spieler = spiel.spieler
         spieler.forEach { sp -> spiel.vorbehalt(Spielregel.REGULÄR, sp) }
@@ -109,7 +119,7 @@ internal class SpielTest {
             spiel.spielen(karten.first(), this)
             assertEquals(9, karten.size)
             assertNotNull(spiel.aktuellerStich)
-            assertThrows(NichtErlaubtException::class.java, { spiel.spielen(karten.first(), this) })
+            assertThrows(NichtErlaubtException::class.java) { spiel.spielen(karten.first(), this) }
         }
 
         assertAll(spieler.subList(1, 4)

@@ -21,7 +21,11 @@ enum class Wert(val punkte: Int, val text: String) {
 /**
  * Die Herz-10 wird nur markiert, wenn die Sonderregel "zweite sticht erste" aktiv ist.
  */
-data class Karte(val farbe: Farbe, val wert: Wert, val trumpf: Boolean, val trumpfHöhe: Int, val herzZehn: Boolean) {
+data class Karte(val farbe: Farbe,
+                 val wert: Wert,
+                 val trumpf: Boolean,
+                 val trumpfHöhe: Int,
+                 val herzZehn: Boolean) {
     constructor(farbe: Farbe, wert: Wert, spielregel: Spielregel, zweiteStichtErste: Boolean) :
             this(farbe, wert,
                     spielregel.istTrumpf(farbe, wert),
@@ -45,7 +49,7 @@ val reDame = Karte(Farbe.KREUZ, Wert.DAME, true, trumpfHöhe(Farbe.KARO, Farbe.K
 /**
  * Erzeugen eines einfachen Kartensatzes ohne Spielregel
  */
-fun erzeugeKarten(spielregel: Spielregel, zweiteStichtErste: Boolean, mitNeunen: Boolean): List<Karte> {
+fun erzeugeKarten(spielregel: Spielregel, mitNeunen: Boolean, zweiteStichtErste: Boolean): List<Karte> {
     return Farbe.values()
         .flatMap { farbe ->
             Wert.values()

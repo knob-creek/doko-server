@@ -1,11 +1,14 @@
 package de.knobcreek.doko
 
-class Stich(val aufgespielt: Karte, val letzterSpieler: Spieler, val karten: List<GespielteKarte>) {
-    constructor(aufgespielt: Karte, spieler: Spieler) :
-            this(aufgespielt, spieler, listOf(GespielteKarte(0, aufgespielt, spieler)))
+class Stich(val nummer: Int,
+            val aufgespielt: Karte,
+            val letzterSpieler: Spieler,
+            val karten: List<GespielteKarte>) {
+    constructor(nummer: Int, aufgespielt: Karte, spieler: Spieler) :
+            this(nummer, aufgespielt, spieler, listOf(GespielteKarte(0, aufgespielt, spieler)))
 
     fun nächsteKarte(karte: Karte, spieler: Spieler) =
-        Stich(aufgespielt, spieler, karten.plus(GespielteKarte(karten.size, karte, spieler)))
+        Stich(nummer, aufgespielt, spieler, karten.plus(GespielteKarte(karten.size, karte, spieler)))
 
     fun darfSpielen(spieler: Spieler) =
             spieler.nummer == (letzterSpieler.nummer + 1) % 4
@@ -24,7 +27,7 @@ class Stich(val aufgespielt: Karte, val letzterSpieler: Spieler, val karten: Lis
                         aufgespielt.trumpf || trumpf -> trumpfHöhe
                         farbe == aufgespielt.farbe -> wert.ordinal
                         else -> 0
-                    } * 10 + (if (herzZehn) gespielteKarte.nummer else -gespielteKarte.nummer)
+                    } * 10 + (if (trumpf && herzZehn) gespielteKarte.nummer else -gespielteKarte.nummer)
                 }}
                 ?.spieler!!
     }

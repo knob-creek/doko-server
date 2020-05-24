@@ -1,6 +1,9 @@
 package de.knobcreek.doko
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
@@ -17,7 +20,7 @@ internal class StichTest {
 
     @Test
     fun darfSpielen() {
-        val stich = Stich(pikAs, spieler[0])
+        val stich = Stich(0, pikAs, spieler[0])
         assertSame(pikAs, stich.aufgespielt)
         assertEquals(1, stich.karten.size)
 
@@ -29,7 +32,7 @@ internal class StichTest {
 
     @Test
     fun darfNichtSpielen() {
-        val stich = Stich(pikAs, spieler[3])
+        val stich = Stich(0, pikAs, spieler[3])
 
         assertTrue(stich.darfSpielen(spieler[0]))
         assertFalse(stich.darfSpielen(spieler[1]))
@@ -46,11 +49,10 @@ internal class StichTest {
         PIK_AS(pikAs)
     }
 
-    // Pik As wird aufgespielt und sticht
     @ParameterizedTest
     @EnumSource(Parameter::class)
-    fun ersteSticht(parameter: Parameter) {
-        val aufspiel = Stich(parameter.aufspiel, spieler[0])
+    fun `wird aufgespielt und sticht`(parameter: Parameter) {
+        val aufspiel = Stich(0, parameter.aufspiel, spieler[0])
 
         var stich = aufspiel
         for (n in 0..2)
@@ -60,12 +62,11 @@ internal class StichTest {
         assertSame(spieler[0], stich.hatGewonnen())
     }
 
-    // Pik wird aufgespielt, Karo 9 sticht
     @ParameterizedTest
     @ValueSource(ints = [1, 2, 3])
-    fun hatGewonnenMitKaroNeun(karoSticht: Int) {
+    fun `Pik wird aufgespielt, Karo 9 sticht`(karoSticht: Int) {
 
-        val aufspiel = Stich(pik[0], spieler[0])
+        val aufspiel = Stich(0, pik[0], spieler[0])
         var stich = aufspiel
 
         for (n in 1 until karoSticht)
@@ -80,10 +81,23 @@ internal class StichTest {
         assertSame(spieler[karoSticht], stich.hatGewonnen())
     }
 
-    fun zweiteStichtImmer(karten: List<Karte>) {
-        val gespielteKarten = (0..2)
+    @Test
+    fun `fleischlos sticht die erste Herz 10`() {
+        val karten = listOf(Wert.BUBE, Wert.ZEHN, Wert.DAME, Wert.ZEHN)
+                .map { wert -> Karte(Farbe.HERZ, wert, Spielregel.FLEISCHLOS, true) }
+
+        val gespielteKarten = karten.indices
                 .map { n -> GespielteKarte(n, karten[n], spieler[n]) }
-        val aufspiel = Stich(karten[0], spieler[2], gespielteKarten)
+
+        val stich = Stich(0, karten[0], spieler[3], gespielteKarten)
+
+        assertSame(spieler[1], stich.hatGewonnen())
+    }
+
+    fun zweiteStichtImmer(karten: List<Karte>) {
+        val gespielteKarten = karten.indices
+                .map { n -> GespielteKarte(n, karten[n], spieler[n]) }
+        val aufspiel = Stich(0, karten[0], spieler[2], gespielteKarten)
 
         val stich = aufspiel.nächsteKarte(herzZehn, spieler[3])
 
@@ -92,11 +106,12 @@ internal class StichTest {
     }
 
     @TestFactory
-    fun erzeugeAlleKombinationen() : List<DynamicTest> {
+    fun `zweite Herz 10 sticht immer`() : List<DynamicTest> {
         val alleKarten = erzeugeKarten(Spielregel.KARO, true, true)
 
         return alleKarten
                 .flatMap { karte1 -> alleKarten
+                        // nur eine Herz-10
                         .filter { karte2 -> karte1 != herzZehn || karte2 != herzZehn }
                         .flatMap { karte2 -> alleKarten
                                 .filter { karte3 ->
