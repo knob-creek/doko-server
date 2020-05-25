@@ -1,7 +1,7 @@
 package de.knobcreek.doko
 
 enum class Farbe(val text: String) {
-    KARO("Ka"), HERZ("Hz"), PIK("Pk"), KREUZ("Kr")
+    KARO("♦"), HERZ("♥"), PIK("♠"), KREUZ("♣")
 }
 
 /**
@@ -32,28 +32,25 @@ data class Karte(val farbe: Farbe,
                     spielregel.trumpfHöhe(farbe, wert),
                     zweiteStichtErste && herzZehn(farbe, wert))
 
-    fun bedient(karte: Karte): Boolean {
-        return if (karte.trumpf) trumpf else !trumpf && farbe == karte.farbe
-    }
+    fun bedient(karte: Karte) =
+            if (karte.trumpf) trumpf else !trumpf && farbe == karte.farbe
 
-    override fun toString(): String {
-        return farbe.text + wert.text
-    }
+    override fun toString() =
+            farbe.text + wert.text
 }
 
-fun herzZehn(farbe: Farbe, wert: Wert): Boolean =
+fun herzZehn(farbe: Farbe, wert: Wert) =
         farbe == Farbe.HERZ && wert == Wert.ZEHN
 
 val reDame = Karte(Farbe.KREUZ, Wert.DAME, true, trumpfHöhe(Farbe.KARO, Farbe.KREUZ, Wert.DAME), false)
 
 /**
- * Erzeugen eines einfachen Kartensatzes ohne Spielregel
+ * Erzeugen eines einfachen Kartensatzes mit der angegebenen Spielregel
  */
-fun erzeugeKarten(spielregel: Spielregel, mitNeunen: Boolean, zweiteStichtErste: Boolean): List<Karte> {
-    return Farbe.values()
-        .flatMap { farbe ->
-            Wert.values()
-                .filter { wert -> mitNeunen || wert != Wert.NEUN }
-                .map { wert -> Karte(farbe, wert, spielregel, zweiteStichtErste) }
-        }
-}
+fun erzeugeKarten(spielregel: Spielregel, mitNeunen: Boolean, zweiteStichtErste: Boolean) =
+        Farbe.values()
+                .flatMap { farbe ->
+                    Wert.values()
+                            .filter { wert -> mitNeunen || wert != Wert.NEUN }
+                            .map { wert -> Karte(farbe, wert, spielregel, zweiteStichtErste) }
+                }
