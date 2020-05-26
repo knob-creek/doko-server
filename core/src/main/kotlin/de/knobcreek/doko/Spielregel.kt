@@ -31,7 +31,7 @@ enum class Spielregel(val istTrumpf: (farbe: Farbe, wert: Wert) -> Boolean,
                 { farbe, _ -> farbe.ordinal + 10 })
 }
 
-fun istTrumpf(trumpfFarbe: Farbe, farbe: Farbe, wert: Wert): Boolean =
+fun istTrumpf(trumpfFarbe: Farbe, farbe: Farbe, wert: Wert) =
     farbe == trumpfFarbe || wert == Wert.BUBE || wert == Wert.DAME || herzZehn(farbe, wert)
 
 /**

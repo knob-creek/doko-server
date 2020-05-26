@@ -77,14 +77,13 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean) {
     fun partei(sp: Spieler, soloSpieler: Spieler) =
             SpielStatus(if (sp == soloSpieler) Partei.RE else Partei.KONTRA)
 
-    fun kartenNeuBewerten(spielregel: Spielregel) {
-        kartenJeSpieler.values
-                .forEach { karten ->
-                    karten.replaceAll {
-                        karte -> Karte(karte.farbe, karte.wert, spielregel, true)
+    fun kartenNeuBewerten(spielregel: Spielregel) =
+            kartenJeSpieler.values
+                    .forEach { karten ->
+                        karten.replaceAll {
+                            karte -> Karte(karte.farbe, karte.wert, spielregel, true)
+                        }
                     }
-                }
-    }
 
     fun spielen(karte: Karte, spieler: Spieler) {
         val karten = kartenJeSpieler[spieler] ?: throw NichtErlaubtException("ungültiger Spieler")
