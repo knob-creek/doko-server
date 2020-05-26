@@ -43,14 +43,19 @@ enum class Spieler(val idx: Int) {
     fun nächster() = Spieler.values()[(idx+1)%4];
 }
 
-data class Stich(
-        val aufspiel: Spieler,
-        val karten: List<Karte>
-)
+sealed class Stich {
+    abstract val aufspiel: Spieler
+    abstract val karten: List<Karte>
+}
+data class OffenerStich(
+        override val aufspiel: Spieler,
+        override val karten: List<Karte>
+): Stich()
 data class FertigerStich(
-        val stich: Stich,
+        override val aufspiel: Spieler,
+        override val karten: List<Karte>,
         val gewinner: Spieler
-)
+): Stich()
 
 enum class SoloTyp {
     Karo, Herz, Pik, Kreuz,
@@ -93,7 +98,7 @@ data class SpielSnapshot(
         val vorbehalt: Pair<Spieler, Vorbehalt>?,
 
         val fertigeStiche: List<FertigerStich>,
-        val aktuellerStich: Stich,
+        val aktuellerStich: OffenerStich,
 
         val journal: List<Pair<Spieler, SpielerAktion>>
 )
