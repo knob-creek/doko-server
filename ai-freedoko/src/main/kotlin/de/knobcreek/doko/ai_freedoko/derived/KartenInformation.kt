@@ -1,9 +1,8 @@
 package de.knobcreek.doko.ai_freedoko.derived
 
-import de.knobcreek.doko.spieler_spi.Karte
-import de.knobcreek.doko.spieler_spi.SpielSnapshot
-import de.knobcreek.doko.spieler_spi.util.SpielFarbe
-import de.knobcreek.doko.spieler_spi.util.*
+import de.knobcreek.doko.spieler_common.*
+import de.knobcreek.doko.spieler_spi.*
+import java.util.*
 
 
 /**
@@ -12,7 +11,109 @@ import de.knobcreek.doko.spieler_spi.util.*
  *
  * @author arno
  */
-class KartenInformation(val spiel: SpielSnapshot) {
+
+
+/**
+ * ermittelt auf Basis des aktuellen Snapshots gesicherte Informationen zur Verteilung der verbleibenden Karten
+ */
+class KartenConstraints(private val spiel: SpielSnapshot) {
+    val anzahlKarten: Map<Spieler, Int> by lazy {
+        val result = HashMap<Spieler, Int>()
+
+        val basisAnzahl = -spiel.fertigeStiche.size + if (spiel.variante.mitNeunen) 12 else 10
+        var s = spiel.aktuellerStich.aufspiel
+        for (i in 0..4) {
+            val anzahl = basisAnzahl + if (i < spiel.aktuellerStich.karten.size) 0 else 1
+            result.put(s, anzahl)
+            s = s.nächster()
+        }
+
+        result
+    }
+
+    /**
+     * Die Liste aller Karten, die ein Spieler sicher hat. Diese Liste enthält im Allgemeinen weniger Karten, als der
+     *  Spieler tatsächlich hat
+     */
+    val sichereKarten: Map<Spieler, KartenSet> by lazy {
+        val result = HashMap<Spieler, KartenSet>()
+
+
+
+        TODO()
+
+        result
+    }
+
+    /**
+     * Die Liste aller Karten, die ein Spieler möglicherweise haben kann. Diese Liste enthält im Allgemeinen mehr
+     *  Karten, als der Spieler tatsächlich hat
+     */
+    val möglicheKarten: Map<Spieler, KartenSet> by lazy {
+        val result = HashMap<Spieler, KartenSet>()
+
+        // Ausgangspunkt: Ich kenne meine eigene Hand, jeder andere kann jede der übrigen Karten haben
+
+        for (s in Spieler.values()) {
+            result.put(s, spiel.alleUngespieltenKarten() - spiel.meineHand())
+        }
+
+        result.put(spiel.werBinIch, spiel.meineHand())
+
+        for (spieler in Spieler.values()) {
+            var karten = result.get(spieler)!!
+
+            // nicht bedienter Stich bedeutet, dass der Spieler auf einer Farbe blank ist
+            for (stich in spiel.fertigeStiche) {
+                if (stich.hatNichtBedient(spieler, spiel.spielregel())) {
+                    karten = karten.filter{ k -> spiel.spielregel().farbe(k) != spiel.farbe(stich)!! }
+                }
+            }
+
+            if (spiel.aktuellerStich.hatNichtBedient(spieler, spiel.spielregel())) {
+                karten = karten.filter{ k -> spiel.spielregel().farbe(k) != spiel.farbe(spiel.aktuellerStich)!! }
+            }
+
+            if(spiel.vorbehalt == null) {
+                // Contra bedeutet "keine Kreuz Dame"
+                for (aktion in spiel.journal) {
+                    if (aktion.first == spieler && aktion.second is Contra) {
+                        karten = karten.filter { k -> k != KreuzDame }
+                    }
+                }
+
+                // Wenn beide Re-Spieler (mir) bekannt sind, können die anderen Spieler keine Kreuz-Damen haben
+                var reSpieler: Set<Spieler> = HashSet<Spieler>()
+                if(spiel.meineHand().contains(KreuzDame)) {
+                    reSpieler = reSpieler + spiel.werBinIch
+                }
+
+                for (aktion in spiel.journal) {
+                    if (aktion.second is Re) {
+                        reSpieler = reSpieler + aktion.first
+                    }
+                }
+
+                if (reSpieler.size == 2 && !reSpieler.contains(spieler)) {
+                    karten = karten.filter { k -> k != KreuzDame }
+                }
+
+            }
+            else if (spiel.vorbehalt!!.second is Hochzeit && spiel.vorbehalt!!.first != spieler) {
+                karten = karten.filter { k -> k != KreuzDame }
+            }
+
+            result.put(spieler, karten)
+        }
+
+        result
+    }
+}
+
+
+
+
+class _KartenInformation(val spiel: SpielSnapshot) {
 
     fun anzahlAufgespielt(farbe: SpielFarbe): Int = spiel.fertigeStiche.count { s -> spiel.farbe(s) == farbe } // color_runs
 
@@ -35,30 +136,30 @@ class KartenInformation(val spiel: SpielSnapshot) {
     val verbleibendeTrümpfe: List<Karte> by lazy {
         verbleibendeKarten.filter { k -> spiel.spielregel().farbe(k).trumpf }
     }
-    val höchsterVerbleibenderTrumpf: Karte? by lazy { spiel.spielregel().höchsteKarte(verbleibendeTrümpfe) } // highest_remaining_trump
-
-    val verbleibendeTrümpfeVonAnderen: List<Karte> by lazy {
-        verbleibendeKartenVonAnderen.filter { k -> spiel.spielregel().farbe(k).trumpf }
-    } // highest_remaining_trump_of_others
-    val höchsterVerbleibenderTrumpfVonAnderen: Karte? by lazy {
-        spiel.spielregel().höchsteKarte(verbleibendeTrümpfeVonAnderen)
-    }
-
-    fun verbleibendeKarten(farbe: SpielFarbe): List<Karte> =
-            verbleibendeKarten.filter { k -> spiel.spielregel().farbe(k) == farbe }
-    fun verbleibendeKartenVonAnderen(farbe: SpielFarbe): List<Karte> =
-            verbleibendeKartenVonAnderen.filter { k -> spiel.spielregel().farbe(k) == farbe }
-
-    fun höchsteVerbleibendeKarteVonAnderen(farbe: SpielFarbe): Karte? =
-            spiel.spielregel().höchsteKarte(verbleibendeKartenVonAnderen(farbe)) // highest_remaining_card_of_others
-
-    fun höhereKarteExistiertBeiAnderen(karte: Karte): Boolean =
-            verbleibendeKartenVonAnderen.any{ k -> spiel.spielregel().isZweiteKarteHöher(karte, k) } // higher_card_exists
-
-    fun anzahlHöhereKartenBeiAnderen(karte: Karte): Int =
-            verbleibendeKartenVonAnderen
-                    .filter { k -> spiel.spielregel().isZweiteKarteHöher(karte, k) }
-                    .count() //higher_cards_no_of_others
+//    val höchsterVerbleibenderTrumpf: Karte? by lazy { spiel.spielregel().höchsteKarte(verbleibendeTrümpfe) } // highest_remaining_trump
+//
+//    val verbleibendeTrümpfeVonAnderen: List<Karte> by lazy {
+//        verbleibendeKartenVonAnderen.filter { k -> spiel.spielregel().farbe(k).trumpf }
+//    } // highest_remaining_trump_of_others
+//    val höchsterVerbleibenderTrumpfVonAnderen: Karte? by lazy {
+//        spiel.spielregel().höchsteKarte(verbleibendeTrümpfeVonAnderen)
+//    }
+//
+//    fun verbleibendeKarten(farbe: SpielFarbe): List<Karte> =
+//            verbleibendeKarten.filter { k -> spiel.spielregel().farbe(k) == farbe }
+//    fun verbleibendeKartenVonAnderen(farbe: SpielFarbe): List<Karte> =
+//            verbleibendeKartenVonAnderen.filter { k -> spiel.spielregel().farbe(k) == farbe }
+//
+//    fun höchsteVerbleibendeKarteVonAnderen(farbe: SpielFarbe): Karte? =
+//            spiel.spielregel().höchsteKarte(verbleibendeKartenVonAnderen(farbe)) // highest_remaining_card_of_others
+//
+//    fun höhereKarteExistiertBeiAnderen(karte: Karte): Boolean =
+//            verbleibendeKartenVonAnderen.any{ k -> spiel.spielregel().isZweiteKarteHöher(karte, k) } // higher_card_exists
+//
+//    fun anzahlHöhereKartenBeiAnderen(karte: Karte): Int =
+//            verbleibendeKartenVonAnderen
+//                    .filter { k -> spiel.spielregel().isZweiteKarteHöher(karte, k) }
+//                    .count() //higher_cards_no_of_others
 
 
 

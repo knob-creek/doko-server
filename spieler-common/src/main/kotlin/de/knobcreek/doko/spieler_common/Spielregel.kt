@@ -1,4 +1,4 @@
-package de.knobcreek.doko.spieler_spi.util
+package de.knobcreek.doko.spieler_common
 
 import de.knobcreek.doko.spieler_spi.*
 

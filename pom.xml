@@ -16,6 +16,7 @@
     <modules>
         <module>ai-freedoko</module>
         <module>core</module>
+        <module>spieler-common</module>
         <module>spieler-spi</module>
     </modules>
 
