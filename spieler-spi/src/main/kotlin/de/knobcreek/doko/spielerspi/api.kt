@@ -1,4 +1,4 @@
-package de.knobcreek.doko.spieler_spi
+package de.knobcreek.doko.spielerspi
 
 /**
  * @author arno

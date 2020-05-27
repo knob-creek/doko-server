@@ -1,6 +1,6 @@
-package de.knobcreek.doko.spieler_common
+package de.knobcreek.doko.spielercommon
 
-import de.knobcreek.doko.spieler_spi.Karte
+import de.knobcreek.doko.spielerspi.Karte
 
 /**
  * @author arno

@@ -1,6 +1,6 @@
 package de.knobcreek.doko.ai_freedoko
 
-import de.knobcreek.doko.spieler_spi.*
+import de.knobcreek.doko.spielerspi.*
 
 /**
  * @author arno

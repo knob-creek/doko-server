@@ -1,6 +1,6 @@
-package de.knobcreek.doko.spieler_common
+package de.knobcreek.doko.spielercommon
 
-import de.knobcreek.doko.spieler_spi.*
+import de.knobcreek.doko.spielerspi.*
 
 /**
  * Eine Spielregel legt die Rangfolge von Karten fest. Das umfasst auch die Unterscheidung, ob es Trumpf gibt

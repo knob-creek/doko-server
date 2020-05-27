@@ -1,7 +1,7 @@
 package de.knobcreek.doko.ai_freedoko.derived
 
-import de.knobcreek.doko.spieler_common.*
-import de.knobcreek.doko.spieler_spi.*
+import de.knobcreek.doko.spielercommon.*
+import de.knobcreek.doko.spielerspi.*
 import java.util.*
 
 
@@ -38,12 +38,15 @@ class KartenConstraints(private val spiel: SpielSnapshot) {
     val sichereKarten: Map<Spieler, KartenSet> by lazy {
         val result = HashMap<Spieler, KartenSet>()
 
-
+        fun alleSicherenKarten() = result.values.reduce { a,b -> a+b }
 
         TODO()
 
         result
     }
+
+    //TODO Wechselwirkung
+
 
     /**
      * Die Liste aller Karten, die ein Spieler möglicherweise haben kann. Diese Liste enthält im Allgemeinen mehr
@@ -75,7 +78,7 @@ class KartenConstraints(private val spiel: SpielSnapshot) {
             }
 
             if(spiel.vorbehalt == null) {
-                // Contra bedeutet "keine Kreuz Dame"
+                // Contra angesagt ==> "keine Kreuz Dame"
                 for (aktion in spiel.journal) {
                     if (aktion.first == spieler && aktion.second is Contra) {
                         karten = karten.filter { k -> k != KreuzDame }

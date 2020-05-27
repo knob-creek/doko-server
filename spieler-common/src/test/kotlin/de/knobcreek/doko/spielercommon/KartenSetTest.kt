@@ -1,8 +1,8 @@
-package de.knobcreek.doko.spieler_common
+package de.knobcreek.doko.spielercommon
 
-import de.knobcreek.doko.spieler_spi.Farbe
-import de.knobcreek.doko.spieler_spi.Karte
-import de.knobcreek.doko.spieler_spi.Wert
+import de.knobcreek.doko.spielerspi.Farbe
+import de.knobcreek.doko.spielerspi.Karte
+import de.knobcreek.doko.spielerspi.Wert
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
