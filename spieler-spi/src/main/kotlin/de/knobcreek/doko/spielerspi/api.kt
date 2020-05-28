@@ -37,7 +37,7 @@ enum class Farbe {
 }
 
 enum class Wert {
-    Neun, Zehn, Bube, Dame, König, As
+    Neun, Bube, Dame, König, Zehn, As
 }
 
 data class Karte(val farbe: Farbe, val wert: Wert)
