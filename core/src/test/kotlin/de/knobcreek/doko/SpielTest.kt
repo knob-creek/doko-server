@@ -24,7 +24,7 @@ internal class SpielTest {
         assertEquals(4, spiel.kartenJeSpieler.size)
         assertAll(
                 spiel.kartenJeSpieler.values
-                        .map { karten -> Executable { assertEquals(parameter.anzahl, karten.size) } }
+                        .map { Executable { assertEquals(parameter.anzahl, it.size) } }
         )
     }
 
@@ -33,7 +33,7 @@ internal class SpielTest {
         val spiel = Spiel(spieler, false, true)
         assertAll(
                 spieler.subList(0, 3)
-                        .map { sp -> Executable { assertNull(spiel.vorbehalt(Spielregel.REGULÄR, sp)) }}
+                        .map { Executable { assertNull(spiel.vorbehalt(Spielregel.REGULÄR, it)) }}
         )
         val regeln = spiel.vorbehalt(Spielregel.REGULÄR, spieler[3])
         assertNotNull(regeln)
@@ -42,12 +42,12 @@ internal class SpielTest {
     }
 
     enum class SpielregelParameter(val spielregel: Spielregel, val trumpf: (Karte) -> Boolean) {
-        KARO(Spielregel.KARO, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.KARO || karte == herzZehn }),
-        HERZ(Spielregel.HERZ, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.HERZ }),
-        PIK(Spielregel.PIK, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.PIK || karte == herzZehn }),
-        KREUZ(Spielregel.KREUZ, { karte -> karte.wert in listOf(Wert.BUBE, Wert.DAME) || karte.farbe == Farbe.KREUZ || karte == herzZehn }),
-        BUBEN(Spielregel.BUBEN, { karte -> karte.wert == Wert.BUBE }),
-        DAMEN(Spielregel.DAMEN, { karte -> karte.wert == Wert.DAME })
+        KARO(Spielregel.KARO, { it.wert in listOf(Wert.BUBE, Wert.DAME) || it.farbe == Farbe.KARO || it == herzZehn }),
+        HERZ(Spielregel.HERZ, { it.wert in listOf(Wert.BUBE, Wert.DAME) || it.farbe == Farbe.HERZ }),
+        PIK(Spielregel.PIK, { it.wert in listOf(Wert.BUBE, Wert.DAME) || it.farbe == Farbe.PIK || it == herzZehn }),
+        KREUZ(Spielregel.KREUZ, { it.wert in listOf(Wert.BUBE, Wert.DAME) || it.farbe == Farbe.KREUZ || it == herzZehn }),
+        BUBEN(Spielregel.BUBEN, { it.wert == Wert.BUBE }),
+        DAMEN(Spielregel.DAMEN, { it.wert == Wert.DAME })
     }
 
     @ParameterizedTest
@@ -59,7 +59,7 @@ internal class SpielTest {
 
         assertAll(
                 kartenBewertungen.values
-                        .map { bewertung -> Executable { assertEquals(parameter.trumpf(bewertung.karte), bewertung.trumpf) } }
+                        .map { Executable { assertEquals(parameter.trumpf(it.karte), it.trumpf) } }
         )
     }
 
@@ -67,19 +67,19 @@ internal class SpielTest {
     @ValueSource(ints = [ 0, 1, 2, 3 ])
     fun fleischlos(fleischlosSpieler: Int) {
         val spiel = Spiel(spieler, false, true)
-        spieler.forEach { sp ->
-            val spielregel = if (sp.nummer == fleischlosSpieler)
+        spieler.forEach {
+            val spielregel = if (it.nummer == fleischlosSpieler)
                 Spielregel.FLEISCHLOS
             else
                 Spielregel.REGULÄR
-            spiel.vorbehalt(spielregel, sp)
+            spiel.vorbehalt(spielregel, it)
         }
         with (spiel) {
             assertSame(Spielregel.FLEISCHLOS, spielregel)
             assertSame(spieler[fleischlosSpieler], soloSpieler)
             assertAll(
                     kartenBewertungen.values
-                            .map { bewertung -> Executable { assertFalse(bewertung.trumpf) } }
+                            .map { Executable { assertFalse(it.trumpf) } }
             )
         }
     }
@@ -99,7 +99,7 @@ internal class SpielTest {
 
         assertAll(
                 spiel.kartenBewertungen.values
-                        .map { bewertung -> Executable { assertEquals(bewertung.karte.wert == Wert.DAME, bewertung.trumpf) } }
+                        .map { Executable { assertEquals(it.karte.wert == Wert.DAME, it.trumpf) } }
         )
     }
 
@@ -108,7 +108,7 @@ internal class SpielTest {
         val spiel = Spiel(spieler, false, true)
 
         val spieler = spiel.spieler
-        spieler.forEach { sp -> spiel.vorbehalt(Spielregel.REGULÄR, sp) }
+        spieler.forEach { spiel.vorbehalt(Spielregel.REGULÄR, it) }
         assertNull(spiel.soloSpieler)
 
         with(spieler[0]) {
@@ -121,20 +121,22 @@ internal class SpielTest {
         }
 
         assertAll(spieler.subList(1, 4)
-                .map { spieler123 -> Executable {
-                    val karten = spiel.kartenJeSpieler[spieler123]
-                    assertEquals(10, karten?.size)
-                    val gespielt = karten?.asSequence()
-                            ?.filter { karte -> try {
-                                spiel.spielen(karte, spieler123)
-                                true
-                            } catch (nex: NichtErlaubtException) {
-                                false
-                            }}
-                            ?.first()
-                    assertNotNull(gespielt)
-                    assertEquals(9, karten?.size)
-                }}
+                .map {
+                    Executable {
+                        val karten = spiel.kartenJeSpieler[it]
+                        assertEquals(10, karten?.size)
+                        val gespielt = karten?.asSequence()
+                                ?.filter { karte -> try {
+                                    spiel.spielen(karte, it)
+                                    true
+                                } catch (nex: NichtErlaubtException) {
+                                    false
+                                }}
+                                ?.first()
+                        assertNotNull(gespielt)
+                        assertEquals(9, karten?.size)
+                    }
+                }
         )
 
         assertNull(spiel.aktuellerStich)

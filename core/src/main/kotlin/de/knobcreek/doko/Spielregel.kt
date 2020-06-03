@@ -21,15 +21,13 @@ enum class Spielregel(val istTrumpf: (Karte) -> Boolean,
      * Die normalen Spielregeln oder ein Farbsolo
      */
     constructor(trumpfFarbe: Farbe) :
-            this({ karte -> istTrumpf(trumpfFarbe, karte) },
-                    { karte -> trumpfHöhe(trumpfFarbe, karte) })
+            this({ istTrumpf(trumpfFarbe, it) }, { trumpfHöhe(trumpfFarbe, it) })
 
     /**
      * Damen- oder Bubensolo
      */
     constructor(trumpf: Wert) :
-            this({ karte -> karte.wert == trumpf },
-                    { karte -> karte.farbe.ordinal + 10 })
+            this({ it.wert == trumpf }, { it.farbe.ordinal + 10 })
 }
 
 fun istTrumpf(trumpfFarbe: Farbe, karte: Karte) =
@@ -43,7 +41,7 @@ fun istTrumpf(trumpfFarbe: Farbe, karte: Karte) =
 fun trumpfHöhe(trumpfFarbe: Farbe, karte: Karte) =
         with (karte) {
             when {
-                karte == herzZehn -> 99
+                karte == herzZehn -> 40
                 wert == Wert.DAME -> 30 + farbe.ordinal
                 wert == Wert.BUBE -> 20 + farbe.ordinal
                 farbe == trumpfFarbe -> 10 + wert.ordinal

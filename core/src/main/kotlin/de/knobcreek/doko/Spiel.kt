@@ -37,8 +37,8 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
         val gemischt = alleKarten.plus(alleKarten).shuffled(random)
         val proSpieler = gemischt.size / spieler.size
         return spieler
-                .associateWith { sp ->
-                    val fromIndex = sp.nummer * proSpieler
+                .associateWith {
+                    val fromIndex = it.nummer * proSpieler
                     gemischt.subList(fromIndex, fromIndex + proSpieler).toMutableList()
                 }
     }
@@ -49,8 +49,7 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
 
         vorbehalte[spieler] = spielregel
         return if (vorbehalte.size == 4) {
-            with (vorbehalte.entries
-                    .maxBy { entry -> entry.value }!!) {
+            with (vorbehalte.entries.maxBy { it.value }!!) {
                 spielStatusNachVorbehalten(key, value)
                 if (value !in listOf(Spielregel.REGULÄR, Spielregel.HOCHZEIT))
                     soloSpieler = key
@@ -63,10 +62,10 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
         this.spielregel = spielregel
         spielStatusJeSpieler = if (spielregel == Spielregel.REGULÄR)
             kartenJeSpieler.entries
-                    .associateBy({ entry -> entry.key }, { entry -> partei(entry.value) })
+                    .associateBy({ it.key }, { partei(it.value) })
         else
             spieler
-                    .associateWith { sp -> partei(sp, soloSpieler) }
+                    .associateWith { partei(it, soloSpieler) }
         kartenBewerten(kartenBewertungen, spielregel)
     }
 
@@ -78,7 +77,7 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
 
     fun kartenBewerten(kartenBewertungen: HashMap<Karte, KartenBewertung>, spielregel: Spielregel) =
             alleKarten
-                    .associateWithTo(kartenBewertungen) { karte -> KartenBewertung(karte, spielregel, zweiteStichtErste) }
+                    .associateWithTo(kartenBewertungen) { KartenBewertung(it, spielregel, zweiteStichtErste) }
 
     fun spielen(karte: Karte, spieler: Spieler) {
         val karten = kartenJeSpieler[spieler] ?: throw NichtErlaubtException("ungültiger Spieler")
@@ -115,16 +114,16 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
     fun ergebnis() : Ergebnis {
         val ansagePunkte = ansagePunkte() // TODO Sonderpunkte
 
-        Partei.values().forEach { partei ->
-            val mitglieder = mitglieder(partei)
+        Partei.values().forEach {
+            val mitglieder = mitglieder(it)
             val spielPunkte = spielPunkte(mitglieder)
             val grenze = mitglieder
-                    .flatMap { spieler -> spielStatusJeSpieler[spieler]?.ansagen ?: emptyList<Ansage>() }
-                    .map { ansage -> ansage.grenze }
+                    .flatMap { spielStatusJeSpieler[it]?.ansagen ?: emptyList<Ansage>() }
+                    .map { it.grenze }
                     .max() ?: 120
-            if (partei.gewonnen(spielPunkte, grenze)) {
-                val punkte = partei.regulärePunkte(spielPunkte) + ansagePunkte
-                return Ergebnis(partei, mitglieder, punkte)
+            if (it.gewonnen(spielPunkte, grenze)) {
+                val punkte = it.regulärePunkte(spielPunkte) + ansagePunkte
+                return Ergebnis(it, mitglieder, punkte)
             }
         }
         // In der seltenen Situation, daß keine Partei ihre Ansagen erreicht,
@@ -134,19 +133,19 @@ class Spiel(val spieler: List<Spieler>, val mitNeunen: Boolean, val zweiteSticht
 
     fun ansagePunkte() =
             spielStatusJeSpieler.values
-                    .flatMap { status -> status.ansagen }
-                    .map { ansage -> ansage.punkte }
+                    .flatMap { it.ansagen }
+                    .map { it.punkte }
                     .sum()
 
     fun mitglieder(partei: Partei) =
             spielStatusJeSpieler.entries
-                    .filter { entry -> entry.value.partei == partei }
-                    .map { entry -> entry.key }
+                    .filter { it.value.partei == partei }
+                    .map { it.key }
 
     fun spielPunkte(mitglieder: List<Spieler>) =
             stiche
-                    .filter { stich -> stich.hatGewonnen() in mitglieder }
-                    .map { stich -> stich.punkte() }
+                    .filter { it.hatGewonnen() in mitglieder }
+                    .map { it.punkte() }
                     .sum()
 }
 

@@ -13,10 +13,10 @@ import org.junit.jupiter.params.provider.ValueSource
 
 internal class StichTest {
     val spieler = (0..3)
-            .map { n -> Spieler(n) }
+            .map { Spieler(it) }
 
     val pik = listOf(Wert.KÖNIG, Wert.ZEHN, Wert.AS)
-            .map { wert -> Karte(Farbe.PIK, wert) }
+            .map { Karte(Farbe.PIK, it) }
 
     @Test
     fun darfSpielen() {
@@ -24,7 +24,7 @@ internal class StichTest {
         assertEquals(pikAs, stich.aufgespielt.karte)
         assertEquals(1, stich.karten.size)
 
-        (1..3).forEach { n -> assertEquals(n == 1, stich.darfSpielen(spieler[n])) }
+        (1..3).forEach { assertEquals(it == 1, stich.darfSpielen(spieler[it])) }
         assertTrue(stich.darfSpielen(pikAs, pik, reguläreBewertungen))
     }
 
@@ -32,7 +32,7 @@ internal class StichTest {
     fun darfNichtSpielen() {
         val stich = Stich(0, reguläreBewertungen.getValue(pikAs), spieler[3])
 
-        (0..2).forEach { n -> assertEquals(n == 0, stich.darfSpielen(spieler[n]), "n = $n") }
+        (0..2).forEach { assertEquals(it == 0, stich.darfSpielen(spieler[it]), "n = $it") }
 
         // hat er gar nicht
         assertFalse(stich.darfSpielen(karoNeun, pik, reguläreBewertungen))
@@ -82,11 +82,11 @@ internal class StichTest {
     @Test
     fun `fleischlos sticht die erste Herz 10`() {
         val karten = listOf(Wert.BUBE, Wert.ZEHN, Wert.DAME, Wert.ZEHN)
-                .map { wert -> Karte(Farbe.HERZ, wert) }
-                .map { karte -> KartenBewertung(karte, Spielregel.FLEISCHLOS, true) }
+                .map { Karte(Farbe.HERZ, it) }
+                .map { KartenBewertung(it, Spielregel.FLEISCHLOS, true) }
 
         val gespielteKarten = karten.indices
-                .map { n -> GespielteKarte(n, karten[n], spieler[n]) }
+                .map { GespielteKarte(it, spieler[it], karten[it]) }
 
         val stich = Stich(0, karten[0], spieler[3], gespielteKarten)
 
@@ -95,7 +95,7 @@ internal class StichTest {
 
     fun zweiteStichtImmer(karten: List<KartenBewertung>) {
         val gespielteKarten = karten.indices
-                .map { n -> GespielteKarte(n, karten[n], spieler[n]) }
+                .map { GespielteKarte(it, spieler[it], karten[it]) }
         val aufspiel = Stich(0, karten[0], spieler[2], gespielteKarten)
 
         val stich = aufspiel.nächsteKarte(reguläreBewertungen.getValue(herzZehn), spieler[3])
@@ -120,7 +120,7 @@ internal class StichTest {
                                         karte3 != karte1 || karte3 != karte2
                                 }
                                 .map { karte3 -> DynamicTest.dynamicTest("$karte1-$karte2-$karte3") {
-                                    zweiteStichtImmer(listOf(karte1, karte2, karte3).map { karte -> reguläreBewertungen.getValue(karte) })
+                                    zweiteStichtImmer(listOf(karte1, karte2, karte3).map { reguläreBewertungen.getValue(it) })
                                 }}
                         }
                 }
@@ -132,4 +132,4 @@ val herzZehn = Karte(Farbe.HERZ, Wert.ZEHN)
 val pikAs = Karte(Farbe.PIK, Wert.AS)
 
 val reguläreBewertungen = erzeugeKarten(true)
-        .associateWith { karte -> KartenBewertung(karte, Spielregel.REGULÄR, true) }
+        .associateWith { KartenBewertung(it, Spielregel.REGULÄR, true) }

@@ -35,6 +35,6 @@ fun erzeugeKarten(mitNeunen: Boolean) =
         Farbe.values()
                 .flatMap { farbe ->
                     Wert.values()
-                            .filter { wert -> mitNeunen || wert != Wert.NEUN }
-                            .map { wert -> Karte(farbe, wert) }
+                            .filter { mitNeunen || it != Wert.NEUN }
+                            .map { Karte(farbe, it) }
                 }
